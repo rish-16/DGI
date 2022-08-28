@@ -2,9 +2,13 @@ import numpy as np
 import scipy.sparse as sp
 import torch
 import torch.nn as nn
-
+import argparse
 from models import DGI, LogReg
 from utils import process
+
+parser = argparse.ArgumentParser(description='Process CLI args for data damage rate')
+parser.add_argument('--dmgrate', type=float, required=True)
+args = parser.parse_args()
 
 dataset = 'cora'
 
@@ -41,17 +45,16 @@ idx_train = torch.LongTensor(idx_train)
 idx_val = torch.LongTensor(idx_val)
 idx_test = torch.LongTensor(idx_test)
 
-cur_dmg_ratio = 0.4
-print (features[0, 0, :40])
-features = process.get_missing_feature_mask(features, 0.1)
+cur_dmg_ratio = float(args.dmgrate)
+print ("Rate:", cur_dmg_ratio)
+features = process.get_missing_feature_mask(features, cur_dmg_ratio)
 assert features.size(0) == 1, "Feature size mismatch"
-print (features[0, 0, :40])
 
 model = DGI(ft_size, hid_units, nonlinearity)
 optimiser = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=l2_coef)
 
 if torch.cuda.is_available():
-    print('Using CUDA')
+    print ('Using CUDA')
     model.cuda()
     features = features.cuda()
     if sparse:
@@ -88,7 +91,7 @@ for epoch in range(nb_epochs):
     loss = b_xent(logits, lbl)
 
     if epoch % 200 == 0:
-        print(f'Epoch: {epoch:<5} | Loss: {loss.item()}')
+        print (f'Epoch: {epoch:<5} | Loss: {loss.item()}')
 
     if loss < best:
         best = loss
@@ -99,13 +102,13 @@ for epoch in range(nb_epochs):
         cnt_wait += 1
 
     if cnt_wait == patience:
-        print('Early stopping!')
+        print ('Early stopping!')
         break
 
     loss.backward()
     optimiser.step()
 
-print('Loading {}th epoch'.format(best_t))
+print ('Loading {}th epoch'.format(best_t))
 model.load_state_dict(torch.load(f'best_models/best_dgi_{cur_dmg_ratio}.pkl'))
 
 embeds, _ = model.embed(features, sp_adj if sparse else adj, sparse, None)
@@ -144,13 +147,13 @@ for _ in range(50):
     preds = torch.argmax(logits, dim=1)
     acc = torch.sum(preds == test_lbls).float() / test_lbls.shape[0]
     accs.append(acc * 100)
-    print(acc)
+    print (acc)
     tot += acc
 
-print(f'Average accuracy for DR = {cur_dmg_ratio}: {tot / 50}')
+print (f'Average accuracy for DR = {cur_dmg_ratio}: {tot / 50}')
 accs = torch.stack(accs)
-print(f'Accuracy mean: {accs.mean()}')
-print(f'Accuracy std: {accs.std()}')
+print (f'Accuracy mean: {accs.mean()}')
+print (f'Accuracy std: {accs.std()}')
 
 final_data = {
     "damage_rate": cur_dmg_ratio,
