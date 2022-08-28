@@ -10,7 +10,7 @@ parser = argparse.ArgumentParser(description='Process CLI args for data damage r
 parser.add_argument('--dmgrate', type=float, required=True)
 args = parser.parse_args()
 
-dataset = 'cora'
+dataset = 'citeseer'
 
 # training params
 batch_size = 1

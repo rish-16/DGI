@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import json, os
 
-PATH = "stats/"
+PATH = "cora_stats/"
 
 accs = []
 rates = []
@@ -24,5 +24,5 @@ rates = [rec[1] for rec in new_data]
 plt.plot(rates, accs, color="green", marker="*", markersize=7)
 plt.xlabel("Masked node feature rate [0, 1.0]")
 plt.ylabel("Test accuracy %")
-plt.title("DGI on missing node features")
+plt.title("DGI on missing node features (Citeseer)")
 plt.show()

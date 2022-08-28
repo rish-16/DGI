@@ -199,3 +199,16 @@ def get_missing_feature_mask(features, rate):
     assert new_features.size(0) == 1
     
     return new_features
+
+def get_missing_feature_mask2(features, rate):
+    features = features.squeeze(0)
+    n_nodes = features.size(0)
+    n_features = features.size(1)
+
+    mask = torch.bernoulli(torch.Tensor([1-rate]).repeat(n_nodes, n_features))
+    new_features = torch.mul(features, mask)
+    
+    new_features = new_features.unsqueeze(0)
+    assert new_features.size(0) == 1
+    
+    return new_features
