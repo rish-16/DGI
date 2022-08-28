@@ -1,1 +1,1 @@
-{"damage_rate": 0.6, "accuracy": 0.8228000998497009, "acc_mean": 82.27999877929688, "acc_std": 0.16413089632987976, "best_model_path": "best_models/best_dgi_0.6.pkl", "best_t": 381}
+{"damage_rate": 0.6, "accuracy": 0.8228000998497009, "acc_mean": 82.27999877929688, "acc_std": 0.16413089632987976, "best_model_path": "best_models/best_dgi_0.6.pkl", "best_t": 381}{"damage_rate": 0.6, "accuracy": 0.7314600944519043, "acc_mean": 73.14600372314453, "acc_std": 0.2149612456560135, "best_model_path": "best_models/best_dgi_0.6.pkl", "best_t": 305}
