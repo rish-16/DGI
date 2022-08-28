@@ -41,9 +41,11 @@ idx_train = torch.LongTensor(idx_train)
 idx_val = torch.LongTensor(idx_val)
 idx_test = torch.LongTensor(idx_test)
 
-cur_dmg_ratio = 0.1
+cur_dmg_ratio = 0.4
+print (features[0, 0, :40])
 features = process.get_missing_feature_mask(features, 0.1)
 assert features.size(0) == 1, "Feature size mismatch"
+print (features[0, 0, :40])
 
 model = DGI(ft_size, hid_units, nonlinearity)
 optimiser = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=l2_coef)
@@ -86,13 +88,13 @@ for epoch in range(nb_epochs):
     loss = b_xent(logits, lbl)
 
     if epoch % 200 == 0:
-        print('Loss:', loss)
+        print(f'Epoch: {epoch:<5} | Loss: {loss.item()}')
 
     if loss < best:
         best = loss
         best_t = epoch
         cnt_wait = 0
-        torch.save(model.state_dict(), f'best_dgi_{cur_dmg_ratio}.pkl')
+        torch.save(model.state_dict(), f'best_models/best_dgi_{cur_dmg_ratio}.pkl')
     else:
         cnt_wait += 1
 
@@ -104,7 +106,7 @@ for epoch in range(nb_epochs):
     optimiser.step()
 
 print('Loading {}th epoch'.format(best_t))
-model.load_state_dict(torch.load(f'best_dgi_{cur_dmg_ratio}.pkl'))
+model.load_state_dict(torch.load(f'best_models/best_dgi_{cur_dmg_ratio}.pkl'))
 
 embeds, _ = model.embed(features, sp_adj if sparse else adj, sparse, None)
 train_embs = embeds[0, idx_train]
@@ -152,9 +154,16 @@ print(f'Accuracy std: {accs.std()}')
 
 final_data = {
     "damage_rate": cur_dmg_ratio,
-    "accuracy": tot / 50,
-    "acc_mean": accs.mean(),
-    "acc_std": accs.std(),
-    "best_model_path": f'best_dgi_{cur_dmg_ratio}.pkl',
+    "accuracy": (tot / 50).item(),
+    "acc_mean": accs.mean().item(),
+    "acc_std": accs.std().item(),
+    "best_model_path": f'best_models/best_dgi_{cur_dmg_ratio}.pkl',
     "best_t": best_t
 }
+
+print (final_data)
+
+import json
+
+with open(f"stats/stats-{cur_dmg_ratio}.json", "a") as f:
+    json.dump(final_data, f)
