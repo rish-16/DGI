@@ -1,1 +1,8 @@
-{"damage_rate": 0.0, "accuracy": 0.8274999856948853, "acc_mean": 82.75000762939453, "acc_std": 0.1501695215702057, "best_model_path": "best_models/best_dgi_0.0.pkl", "best_t": 191}
+{
+    "damage_rate": 0,
+    "accuracy": 0.8274999856948853,
+    "acc_mean": 82.75000762939453,
+    "acc_std": 0.1501695215702057,
+    "best_model_path": "best_models/best_dgi_0.0.pkl",
+    "best_t": 191
+}
