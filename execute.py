@@ -12,6 +12,7 @@ parser.add_argument('--dmgrate', type=float, required=True)
 args = parser.parse_args()
 
 dataset = 'pubmed'
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
 # training params
 batch_size = 1
@@ -56,16 +57,16 @@ optimiser = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=l2_coef)
 
 if torch.cuda.is_available():
     print ('Using CUDA')
-    model.cuda()
-    features = features.cuda()
+    model.to(device)
+    features = features.to(device)
     if sparse:
-        sp_adj = sp_adj.cuda()
+        sp_adj = sp_adj.to(device)
     else:
-        adj = adj.cuda()
-    labels = labels.cuda()
-    idx_train = idx_train.cuda()
-    idx_val = idx_val.cuda()
-    idx_test = idx_test.cuda()
+        adj = adj.to(device)
+    labels = labels.to(device)
+    idx_train = idx_train.to(device)
+    idx_val = idx_val.to(device)
+    idx_test = idx_test.to(device)
 
 b_xent = nn.BCEWithLogitsLoss()
 xent = nn.CrossEntropyLoss()
@@ -85,8 +86,8 @@ for epoch in range(nb_epochs):
     lbl = torch.cat((lbl_1, lbl_2), 1)
 
     if torch.cuda.is_available():
-        shuf_fts = shuf_fts.cuda()
-        lbl = lbl.cuda()
+        shuf_fts = shuf_fts.to(device)
+        lbl = lbl.to(device)
     
     logits = model(features, shuf_fts, sp_adj if sparse else adj, sparse, None, None, None) 
     loss = b_xent(logits, lbl)
@@ -122,18 +123,18 @@ val_lbls = torch.argmax(labels[0, idx_val], dim=1)
 test_lbls = torch.argmax(labels[0, idx_test], dim=1)
 
 tot = torch.zeros(1)
-tot = tot.cuda()
+tot = tot.to(device)
 
 accs = []
 
 for _ in range(50):
     log = LogReg(hid_units, nb_classes)
     opt = torch.optim.Adam(log.parameters(), lr=0.01, weight_decay=0.0)
-    log.cuda()
+    log.to(device)
 
     pat_steps = 0
     best_acc = torch.zeros(1)
-    best_acc = best_acc.cuda()
+    best_acc = best_acc.to(device)
     for _ in range(100):
         log.train()
         opt.zero_grad()
