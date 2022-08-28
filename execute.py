@@ -3,6 +3,7 @@ import scipy.sparse as sp
 import torch
 import torch.nn as nn
 import argparse
+import json
 from models import DGI, LogReg
 from utils import process
 
@@ -10,7 +11,7 @@ parser = argparse.ArgumentParser(description='Process CLI args for data damage r
 parser.add_argument('--dmgrate', type=float, required=True)
 args = parser.parse_args()
 
-dataset = 'citeseer'
+dataset = 'pubmed'
 
 # training params
 batch_size = 1
@@ -97,7 +98,7 @@ for epoch in range(nb_epochs):
         best = loss
         best_t = epoch
         cnt_wait = 0
-        torch.save(model.state_dict(), f'citeseer_best_models/best_dgi_{cur_dmg_ratio}.pkl')
+        torch.save(model.state_dict(), f'{dataset}_best_models/best_dgi_{cur_dmg_ratio}.pkl')
     else:
         cnt_wait += 1
 
@@ -109,7 +110,7 @@ for epoch in range(nb_epochs):
     optimiser.step()
 
 print ('Loading {}th epoch'.format(best_t))
-model.load_state_dict(torch.load(f'citeseer_best_models/best_dgi_{cur_dmg_ratio}.pkl'))
+model.load_state_dict(torch.load(f'{dataset}_best_models/best_dgi_{cur_dmg_ratio}.pkl'))
 
 embeds, _ = model.embed(features, sp_adj if sparse else adj, sparse, None)
 train_embs = embeds[0, idx_train]
@@ -160,13 +161,11 @@ final_data = {
     "accuracy": (tot / 50).item(),
     "acc_mean": accs.mean().item(),
     "acc_std": accs.std().item(),
-    "best_model_path": f'citeseer_best_models/best_dgi_{cur_dmg_ratio}.pkl',
+    "best_model_path": f'{dataset}_best_models/best_dgi_{cur_dmg_ratio}.pkl',
     "best_t": best_t
 }
 
 print (final_data)
 
-import json
-
-with open(f"citeseer_stats/stats-{cur_dmg_ratio}.json", "a") as f:
+with open(f"{dataset}_stats/stats-{cur_dmg_ratio}.json", "a") as f:
     json.dump(final_data, f)

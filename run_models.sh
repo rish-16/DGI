@@ -4,7 +4,6 @@ python execute.py --dmgrate 0.2
 python execute.py --dmgrate 0.3
 python execute.py --dmgrate 0.4
 python execute.py --dmgrate 0.5
-python execute.py --dmgrate 0.5
 python execute.py --dmgrate 0.6
 python execute.py --dmgrate 0.7
 python execute.py --dmgrate 0.8
