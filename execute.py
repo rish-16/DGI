@@ -41,6 +41,10 @@ idx_train = torch.LongTensor(idx_train)
 idx_val = torch.LongTensor(idx_val)
 idx_test = torch.LongTensor(idx_test)
 
+cur_dmg_ratio = 0.1
+features = process.get_missing_feature_mask(features, 0.1)
+assert features.size(0) == 1, "Feature size mismatch"
+
 model = DGI(ft_size, hid_units, nonlinearity)
 optimiser = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=l2_coef)
 
@@ -79,16 +83,16 @@ for epoch in range(nb_epochs):
         lbl = lbl.cuda()
     
     logits = model(features, shuf_fts, sp_adj if sparse else adj, sparse, None, None, None) 
-
     loss = b_xent(logits, lbl)
 
-    print('Loss:', loss)
+    if epoch % 200 == 0:
+        print('Loss:', loss)
 
     if loss < best:
         best = loss
         best_t = epoch
         cnt_wait = 0
-        torch.save(model.state_dict(), 'best_dgi.pkl')
+        torch.save(model.state_dict(), f'best_dgi_{cur_dmg_ratio}.pkl')
     else:
         cnt_wait += 1
 
@@ -100,7 +104,7 @@ for epoch in range(nb_epochs):
     optimiser.step()
 
 print('Loading {}th epoch'.format(best_t))
-model.load_state_dict(torch.load('best_dgi.pkl'))
+model.load_state_dict(torch.load(f'best_dgi_{cur_dmg_ratio}.pkl'))
 
 embeds, _ = model.embed(features, sp_adj if sparse else adj, sparse, None)
 train_embs = embeds[0, idx_train]
@@ -141,9 +145,16 @@ for _ in range(50):
     print(acc)
     tot += acc
 
-print('Average accuracy:', tot / 50)
-
+print(f'Average accuracy for DR = {cur_dmg_ratio}: {tot / 50}')
 accs = torch.stack(accs)
-print(accs.mean())
-print(accs.std())
+print(f'Accuracy mean: {accs.mean()}')
+print(f'Accuracy std: {accs.std()}')
 
+final_data = {
+    "damage_rate": cur_dmg_ratio,
+    "accuracy": tot / 50,
+    "acc_mean": accs.mean(),
+    "acc_std": accs.std(),
+    "best_model_path": f'best_dgi_{cur_dmg_ratio}.pkl',
+    "best_t": best_t
+}

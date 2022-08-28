@@ -23,28 +23,6 @@ def parse_skipgram(fname):
             it += 1
     return ret
 
-# Process a (subset of) a TU dataset into standard form
-def process_tu(data, nb_nodes):
-    nb_graphs = len(data)
-    ft_size = data.num_features
-
-    features = np.zeros((nb_graphs, nb_nodes, ft_size))
-    adjacency = np.zeros((nb_graphs, nb_nodes, nb_nodes))
-    labels = np.zeros(nb_graphs)
-    sizes = np.zeros(nb_graphs, dtype=np.int32)
-    masks = np.zeros((nb_graphs, nb_nodes))
-       
-    for g in range(nb_graphs):
-        sizes[g] = data[g].x.shape[0]
-        features[g, :sizes[g]] = data[g].x
-        labels[g] = data[g].y[0]
-        masks[g, :sizes[g]] = 1.0
-        e_ind = data[g].edge_index
-        coo = sp.coo_matrix((np.ones(e_ind.shape[1]), (e_ind[0, :], e_ind[1, :])), shape=(nb_nodes, nb_nodes))
-        adjacency[g] = coo.todense()
-
-    return features, adjacency, labels, sizes, masks
-
 def micro_f1(logits, labels):
     # Compute predictions
     preds = torch.round(nn.Sigmoid()(logits))
@@ -66,10 +44,10 @@ def micro_f1(logits, labels):
     return f1
 
 """
- Prepare adjacency matrix by expanding up to a given neighbourhood.
- This will insert loops on every node.
- Finally, the matrix is converted to bias vectors.
- Expected shape: [graph, nodes, nodes]
+Prepare adjacency matrix by expanding up to a given neighbourhood.
+This will insert loops on every node.
+Finally, the matrix is converted to bias vectors.
+Expected shape: [graph, nodes, nodes]
 """
 def adj_to_bias(adj, sizes, nhood=1):
     nb_graphs = adj.shape[0]
@@ -83,7 +61,6 @@ def adj_to_bias(adj, sizes, nhood=1):
                 if mt[g][i][j] > 0.0:
                     mt[g][i][j] = 1.0
     return -1e9 * (1.0 - mt)
-
 
 ###############################################
 # This section of code adapted from tkipf/gcn #
@@ -195,7 +172,6 @@ def normalize_adj(adj):
     d_mat_inv_sqrt = sp.diags(d_inv_sqrt)
     return adj.dot(d_mat_inv_sqrt).transpose().dot(d_mat_inv_sqrt).tocoo()
 
-
 def preprocess_adj(adj):
     """Preprocessing of adjacency matrix for simple GCN model and conversion to tuple representation."""
     adj_normalized = normalize_adj(adj + sp.eye(adj.shape[0]))
@@ -209,3 +185,17 @@ def sparse_mx_to_torch_sparse_tensor(sparse_mx):
     values = torch.from_numpy(sparse_mx.data)
     shape = torch.Size(sparse_mx.shape)
     return torch.sparse.FloatTensor(indices, values, shape)
+
+# inspired by feature-propagation paper by Twitter Research
+def get_missing_feature_mask(features, rate):
+    features = features.squeeze(0)
+    n_nodes = features.size(0)
+    n_features = features.size(1)
+
+    mask = torch.bernoulli(torch.Tensor([1-rate]).repeat(n_nodes, n_features))
+    new_features = torch.mul(features, mask)
+    
+    new_features = new_features.unsqueeze(0)
+    assert new_features.size(0) == 1
+    
+    return new_features

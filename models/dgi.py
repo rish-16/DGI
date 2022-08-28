@@ -30,4 +30,3 @@ class DGI(nn.Module):
         c = self.read(h_1, msk)
 
         return h_1.detach(), c.detach()
-
